@@ -1,18 +1,45 @@
-from pymongo import MongoClient
-from pymongo.errors import ServerSelectionTimeoutError
-import gridfs
+# db.py
+import os
+import psycopg2
+from psycopg2.extras import DictCursor
 
-MONGO_URI = "mongodb+srv://<admin>:<admin>@cluster0.y2d81.mongodb.net/messaging_app?retryWrites=true&w=majority"
+# It's recommended to set DATABASE_URL as an environment variable for security
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://chatapp_kh28_user:uyjO1GIBnEY4gOVdIiAxxcdJYmDCO3Iq@dpg-cu5pd68gph6c73bvjn30-a.oregon-postgres.render.com/chatapp_kh28")
 
 try:
-    client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
-    client.server_info()  # Force connection on a request as a test
-    print("Connected to MongoDB successfully!")
-except ServerSelectionTimeoutError as err:
-    print(f"Failed to connect to MongoDB: {err}")
-    client = None
+    conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+    conn.autocommit = True
+    cursor = conn.cursor(cursor_factory=DictCursor)
+    print("Connected to PostgreSQL successfully!")
+except Exception as e:
+    print(f"Failed to connect to PostgreSQL: {e}")
+    cursor = None
+    conn = None
 
-db = client['messaging_app'] if client else None
-users_collection = db['users'] if db else None
-messages_collection = db['messages'] if db else None
-fs = gridfs.GridFS(db) if db else None
+def create_tables():
+    if conn is None or cursor is None:
+        print("No database connection.")
+        return
+    with conn.cursor() as cur:
+        cur.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                username VARCHAR(255) UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                status VARCHAR(50),
+                avatar TEXT
+            );
+        ''')
+        cur.execute('''
+            CREATE TABLE IF NOT EXISTS messages (
+                id SERIAL PRIMARY KEY,
+                sender VARCHAR(255) NOT NULL,
+                recipient VARCHAR(255) NOT NULL,
+                message TEXT NOT NULL,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                read BOOLEAN DEFAULT FALSE
+            );
+        ''')
+    print("Tables are set up successfully.")
+
+create_tables()
