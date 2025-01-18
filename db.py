@@ -4,7 +4,7 @@ import psycopg2
 from psycopg2.extras import DictCursor
 
 # It's recommended to set DATABASE_URL as an environment variable for security
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://chatapp_kh28_user:uyjO1GIBnEY4gOVdIiAxxcdJYmDCO3Iq@dpg-cu5pd68gph6c73bvjn30-a.oregon-postgres.render.com/chatapp_kh28")
+DATABASE_URL = os.getenv()
 
 try:
     conn = psycopg2.connect(DATABASE_URL, sslmode='require')
