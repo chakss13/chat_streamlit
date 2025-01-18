@@ -4,3 +4,4 @@ numpy
 pymongo
 bcrypt
 Pillow  
+psycopg2
