@@ -3,5 +3,5 @@ pandas
 numpy
 pymongo
 bcrypt
-Pillow  
-psycopg2
+Pillow
+psycopg2-binary
