@@ -1,11 +1,11 @@
-# db.py
-
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
 import gridfs
+import os
 
-# MongoDB connection URI
-MONGO_URI = "mongodb://localhost:27017/"
+# MongoDB connection URI from environment variable
+MONGO_URI = os.getenv(" cluster0-shard-00-00.y2d81.mongodb.net:27017", "mongodb://localhost:27017/")
+
 
 # Initialize MongoDB client with a timeout to catch connection issues
 try:
