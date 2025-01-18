@@ -1,38 +1,55 @@
 # messaging.py
 
-from db import messages_collection
-import streamlit as st
+from db import cursor, conn
 from datetime import datetime
 
 def send_message(sender, recipient, message):
     """
     Sends a message from the sender to the recipient.
-
-    :param sender: Username of the sender.
-    :param recipient: Username of the recipient.
-    :param message: Content of the message.
+    
+    Args:
+        sender (str): The username of the sender.
+        recipient (str): The username of the recipient.
+        message (str): The message content.
+        
+    Returns:
+        tuple: (bool, str) indicating success status and a message.
     """
-    messages_collection.insert_one({
-        "sender": sender,
-        "recipient": recipient,
-        "message": message,
-        "timestamp": datetime.utcnow(),
-        "read": False  # Indicates if the message has been read
-    })
-    st.success("Message sent!")
+    if conn is None or cursor is None:
+        return False, "Database connection is not available."
+    
+    # Check if the recipient exists
+    cursor.execute("SELECT username FROM users WHERE username = %s", (recipient,))
+    if not cursor.fetchone():
+        return False, "Recipient not found."
+
+    # Insert the message into the database
+    cursor.execute(
+        "INSERT INTO messages (sender, recipient, message, read) VALUES (%s, %s, %s, %s)",
+        (sender, recipient, message, False)
+    )
+    return True, "Message sent successfully."
 
 def get_messages(username, selected_user):
     """
     Retrieves all messages between the logged-in user and the selected user.
-
-    :param username: Logged-in user's username.
-    :param selected_user: The user with whom to chat.
-    :return: List of message dictionaries sorted by timestamp.
+    
+    Args:
+        username (str): The username of the logged-in user.
+        selected_user (str): The username of the user to chat with.
+        
+    Returns:
+        list: A list of message dictionaries.
     """
-    messages = messages_collection.find({
-        "$or": [
-            {"sender": username, "recipient": selected_user},
-            {"sender": selected_user, "recipient": username}
-        ]
-    }).sort("timestamp", 1)  # Sort messages from oldest to newest
-    return list(messages)
+    if conn is None or cursor is None:
+        return []
+    
+    cursor.execute('''
+        SELECT sender, recipient, message, timestamp 
+        FROM messages 
+        WHERE (sender = %s AND recipient = %s) OR (sender = %s AND recipient = %s)
+        ORDER BY timestamp ASC
+    ''', (username, selected_user, selected_user, username))
+    
+    messages = cursor.fetchall()
+    return messages
